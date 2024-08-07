@@ -23,7 +23,6 @@ public class ClientHandler implements Runnable{
                 outputStream.flush();
             }
 
-            outputStream.write("+PONG\r\n".getBytes());
         }catch (IOException e) {
             System.err.println("Erreur de connexion avec le client : " + e.getMessage());
         } finally {
