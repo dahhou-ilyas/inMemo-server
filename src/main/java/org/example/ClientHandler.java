@@ -2,6 +2,7 @@ package org.example;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
@@ -35,5 +36,19 @@ public class ClientHandler implements Runnable {
                 System.err.println("Erreur lors de la fermeture de la socket du client : " + e.getMessage());
             }
         }
+    }
+    private String processRequest(List<String> request){
+        String response="";
+        if (request.get(1).toLowerCase().equals("echo")){
+            if(request.size()>2){
+                response=request.get(2);
+            }else {
+                return "$0\r\n\r\n";
+            }
+
+        }
+        String responseFormatted="$"+response.length()+"\r\n"+response+"\r\n";
+        System.out.println(responseFormatted);
+        return responseFormatted;
     }
 }
