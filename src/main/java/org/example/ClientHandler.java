@@ -20,20 +20,18 @@ public class ClientHandler implements Runnable {
                 OutputStream outputStream = clientSocket.getOutputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
-            String inputLine;
             List<String> request = new ArrayList<>();
-            while ( null!= (inputLine = bufferedReader.readLine()) ) {
-                if (inputLine.isEmpty()) {
-                    if (!request.isEmpty()) {
-                        String response = processRequest(request);
-                        System.out.println("Réponse : " + response);
-                        outputStream.write(response.getBytes());
-                        outputStream.flush();
-                        request.clear();
-                    }
-                } else {
-                    request.add(inputLine);
-                }
+            while (bufferedReader.ready()) {
+                /*if ("PING".equals(request)) {
+                    outputStream.write("+PONG\r\n".getBytes());
+                }else if ("ECHO".equalsIgnoreCase(inputLine)) {
+                    bufferedReader.readLine();
+                    String message = bufferedReader.readLine();
+                    outputStream.write(
+                            String.format("$%d\r\n%s\r\n", message.length(), message)
+                                    .getBytes());
+                }*/
+                request.add(bufferedReader.readLine());
             }
 
             if (!request.isEmpty()) {
@@ -112,7 +110,13 @@ public class ClientHandler implements Runnable {
         } else if (response.isEmpty()) {
             return "$0\r\n\r\n"; // Format pour une chaîne vide
         } else {
-            return "$" + response.length() + "\r\n" + response + "\r\n";
+            return String.format("$%d\r\n%s\r\n",response.length(), response);
         }
+    }
+
+    private boolean isCompleteResponse(String response) {
+        // Vérifiez si la réponse est complète en fonction du protocole RESP
+        // Vous pouvez ajouter des vérifications plus spécifiques ici
+        return response.endsWith("\r\n");
     }
 }
