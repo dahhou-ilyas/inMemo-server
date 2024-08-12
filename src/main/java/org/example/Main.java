@@ -5,23 +5,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Main {
-    public static void main(String[] args){
-        // You can use print statements as follows for debugging, they'll be visible when running tests.
-        System.out.println("Logs from your program will appear here!");
+    public static void main(String[] args) {
         ServerSocket serverSocket = null;
-        Socket clientSocket = null;
         int port = 6379;
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
-            while (true){
-                clientSocket = serverSocket.accept();
-                System.out.println("Connexion acceptée de " + clientSocket.getInetAddress());
+            while (!serverSocket.isClosed() && !Thread.currentThread().isInterrupted()) {
+                Socket clientSocket = serverSocket.accept();
+                // Create a new thread for the client.
                 new Thread(new ClientHandler(clientSocket)).start();
             }
-
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
+        } finally {
+            System.out.println("zazaz");
+            try {
+                if (serverSocket != null) serverSocket.close();
+            } catch (IOException e) {
+                System.out.println("IOException: " + e.getMessage());
+            }
         }
     }
 }
