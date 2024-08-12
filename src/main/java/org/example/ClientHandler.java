@@ -4,10 +4,13 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
+    private static final Map<String, String> store = new HashMap<>();
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -20,26 +23,82 @@ public class ClientHandler implements Runnable {
                 OutputStream outputStream = clientSocket.getOutputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
-            List<String> request = new ArrayList<>();
-            while (bufferedReader.ready()) {
-                /*if ("PING".equals(request)) {
-                    outputStream.write("+PONG\r\n".getBytes());
-                }else if ("ECHO".equalsIgnoreCase(inputLine)) {
+
+
+
+            String request;
+            while (!clientSocket.isClosed() ) {
+                request = bufferedReader.readLine();
+                if (request == null) {
+                    break;
+                }
+
+                request = request.trim().toLowerCase();
+                if("set".equals(request.toLowerCase())){
+                    String emptyLine = bufferedReader.readLine(); // Lire la ligne attendue (peut être vide)
+                    if (emptyLine == null) {
+                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
+                        outputStream.flush();
+                        break;
+                    }
+                    String key = bufferedReader.readLine();
+                    if (key == null) {
+                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
+                        outputStream.flush();
+                        break;
+                    }
                     bufferedReader.readLine();
+                    String value = bufferedReader.readLine();
+                    if (value == null) {
+                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
+                        outputStream.flush();
+                        break;
+                    }
+                    store.put(key, value);
+                    outputStream.write("+OK\r\n".getBytes());
+                    outputStream.flush();
+
+                }else if("get".equals(request.toLowerCase())){
+                    String emptyLine = bufferedReader.readLine();
+                    if (emptyLine == null) {
+                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
+                        outputStream.flush();
+                        break;
+                    }
+                    String key = bufferedReader.readLine();
+                    if (key == null) {
+                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
+                        outputStream.flush();
+                        break;
+                    }
+                    String value = store.get(key);
+                    System.out.println(value);
+                    if (value != null) {
+                        outputStream.write(String.format("$%d\r\n%s\r\n", value.length(), value).getBytes());
+                    } else {
+                        outputStream.write("$-1\r\n".getBytes()); // Indique que la clé n'existe pas
+                    }
+                    outputStream.flush();
+                }
+                else if ("ping".equals(request)) {
+                    outputStream.write("+PONG\r\n".getBytes());
+                } else if ("ECHO".equalsIgnoreCase(request)) {
+                    String lengthLine = bufferedReader.readLine();
+                    if (lengthLine == null) {
+                        outputStream.write("-ERR Missing argument length\r\n".getBytes());
+                        continue;
+                    }
+                    int length = Integer.parseInt(lengthLine.substring(1));
                     String message = bufferedReader.readLine();
-                    outputStream.write(
-                            String.format("$%d\r\n%s\r\n", message.length(), message)
-                                    .getBytes());
-                }*/
-                request.add(bufferedReader.readLine());
+                    if (message == null || message.length() != length) {
+                        outputStream.write("-ERR Invalid argument data\r\n".getBytes());
+                        continue;
+                    }
+                    outputStream.write(String.format("$%d\r\n%s\r\n", message.length(), message).getBytes());
+                }
+                outputStream.flush(); // Assurez-vous que les données sont envoyées
             }
 
-            if (!request.isEmpty()) {
-                String response = processRequest(request);
-                System.out.println(response);
-                outputStream.write(response.getBytes());
-                outputStream.flush();
-            }
 
         }catch (SocketException e) {
             System.out.println("SocketException: Connection reset");
@@ -56,8 +115,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    //-------------------------------------------------------
     private String processRequest(List<String> request) {
-        // Assure que la requête est au format RESP
         if (request.isEmpty() || !request.get(0).startsWith("*")) {
             return "-ERR Invalid request\r\n";
         }
@@ -84,10 +143,10 @@ public class ClientHandler implements Runnable {
                 return "-ERR Missing argument data\r\n";
             }
             arguments.add(argument);
-            index += 2; // Passer au prochain argument
+            index += 2;
         }
 
-        String command = arguments.get(0); // En supposant que la première commande est "ECHO"
+        String command = arguments.get(0);
         String response = "";
 
         if("PING".equalsIgnoreCase(command)){
@@ -113,10 +172,20 @@ public class ClientHandler implements Runnable {
             return String.format("$%d\r\n%s\r\n",response.length(), response);
         }
     }
-
-    private boolean isCompleteResponse(String response) {
-        // Vérifiez si la réponse est complète en fonction du protocole RESP
-        // Vous pouvez ajouter des vérifications plus spécifiques ici
-        return response.endsWith("\r\n");
-    }
 }
+//List<String> request=new ArrayList<>();
+/*while (bufferedReader.ready()) {
+                String line = bufferedReader.readLine();
+
+                if (line == null) {
+                    // Connection closed by client
+                    break;
+                }
+                request.add(line);
+            }
+
+            if (!request.isEmpty()) {
+                String response = processRequest(request);
+                System.out.println(response);
+                outputStream.write(response.getBytes());
+            }*/
