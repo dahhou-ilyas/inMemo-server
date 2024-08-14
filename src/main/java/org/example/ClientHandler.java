@@ -3,14 +3,26 @@ package org.example;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ClientHandler implements Runnable {
+    class Node {
+        private String value;
+        private Long exp;
+
+        Node(String value, Long exp) {
+            this.value = value;
+            this.exp = exp;
+        }
+
+        Node(String value) {
+            this.value = value;
+        }
+
+    }
+
     private Socket clientSocket;
-    private static final Map<String, String> store = new HashMap<>();
+    private static final Map<String, Node> store = new HashMap<>();
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -23,86 +35,47 @@ public class ClientHandler implements Runnable {
                 OutputStream outputStream = clientSocket.getOutputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
+            // !! il y a une errue dans le cas de deux commande simultané
 
 
+            // khasni nchouf des exemples bach nfhem mzyan
 
-            String request;
-            while (!clientSocket.isClosed() ) {
-                request = bufferedReader.readLine();
-                if (request == null) {
+            while (true) {
+                int bytesAvailable = inputStream.available();
+                if (bytesAvailable > 0) {
+                    byte[] buffer = new byte[bytesAvailable];
+                    int bytesRead = inputStream.read(buffer);
+
+                    if (bytesRead > 0) {
+                        String[] split = new String(buffer, 0, bytesRead).split("\r\n");
+                        List<String> list = Arrays.asList(split);
+
+                        ArrayList<String> arrayList = new ArrayList<>(list);
+                        System.out.println(arrayList);
+                        switch (split[2].toLowerCase()){
+                            case "ping":
+                                hundlePingCommande(split,outputStream);
+                                break;
+                            case "echo":
+                                hundleEchoCommande(split,outputStream);
+                                break;
+                            case "get":
+                                hundleGetCommande(split,outputStream);
+                                break;
+                            case "set":
+                                hundleSetCommande(split,outputStream);
+                                break;
+                        }
+                    } else {
+                        break;
+                    }
+                } else {
                     break;
                 }
-
-                request = request.trim().toLowerCase();
-                if("set".equals(request.toLowerCase())){
-                    String emptyLine = bufferedReader.readLine(); // Lire la ligne attendue (peut être vide)
-                    if (emptyLine == null) {
-                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
-                        outputStream.flush();
-                        break;
-                    }
-                    String key = bufferedReader.readLine();
-                    if (key == null) {
-                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
-                        outputStream.flush();
-                        break;
-                    }
-                    bufferedReader.readLine();
-                    String value = bufferedReader.readLine();
-                    if (value == null) {
-                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
-                        outputStream.flush();
-                        break;
-                    }
-                    store.put(key, value);
-                    outputStream.write("+OK\r\n".getBytes());
-                    outputStream.flush();
-
-                }else if("get".equals(request.toLowerCase())){
-                    String emptyLine = bufferedReader.readLine();
-                    if (emptyLine == null) {
-                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
-                        outputStream.flush();
-                        break;
-                    }
-                    String key = bufferedReader.readLine();
-                    if (key == null) {
-                        outputStream.write("-Error wrong number of arguments for command\r\n".getBytes());
-                        outputStream.flush();
-                        break;
-                    }
-                    String value = store.get(key);
-                    System.out.println(value);
-                    if (value != null) {
-                        outputStream.write(String.format("$%d\r\n%s\r\n", value.length(), value).getBytes());
-                    } else {
-                        outputStream.write("$-1\r\n".getBytes()); // Indique que la clé n'existe pas
-                    }
-                    outputStream.flush();
-                }
-                else if ("ping".equals(request)) {
-                    outputStream.write("+PONG\r\n".getBytes());
-                } else if ("ECHO".equalsIgnoreCase(request)) {
-                    String lengthLine = bufferedReader.readLine();
-                    if (lengthLine == null) {
-                        outputStream.write("-ERR Missing argument length\r\n".getBytes());
-                        continue;
-                    }
-                    int length = Integer.parseInt(lengthLine.substring(1));
-                    String message = bufferedReader.readLine();
-                    if (message == null || message.length() != length) {
-                        outputStream.write("-ERR Invalid argument data\r\n".getBytes());
-                        continue;
-                    }
-                    outputStream.write(String.format("$%d\r\n%s\r\n", message.length(), message).getBytes());
-                }
-                outputStream.flush(); // Assurez-vous que les données sont envoyées
             }
 
-
-        }catch (SocketException e) {
+        } catch (SocketException e) {
             System.out.println("SocketException: Connection reset");
-
         } catch (IOException e) {
             System.err.println("Erreur de connexion avec le client : " + e.getMessage());
         } finally {
@@ -115,77 +88,89 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    //-------------------------------------------------------
-    private String processRequest(List<String> request) {
-        if (request.isEmpty() || !request.get(0).startsWith("*")) {
-            return "-ERR Invalid request\r\n";
+
+    private void hundlePingCommande(String[] split,OutputStream outputStream) throws IOException {
+        if (split.length > 3) {
+            outputStream.write(("+" + split[4] + "\r\n").getBytes());
+        } else {
+            outputStream.write("+PONG\r\n".getBytes());
         }
-
-        int numArgs = Integer.parseInt(request.get(0).substring(1));
-        if (numArgs < 1) {
-            return "-ERR Invalid number of arguments\r\n";
-        }
-
-        List<String> arguments = new ArrayList<>();
-        int index = 1;
-        for (int i = 0; i < numArgs; i++) {
-            if (index >= request.size()) {
-                return "-ERR Missing argument length\r\n";
-            }
-            String lengthStr = request.get(index).substring(1);
-            int length = Integer.parseInt(lengthStr);
-            String argument;
-            if (length == -1) {
-                argument = null;
-            } else if (index + 1 < request.size()) {
-                argument = request.get(index + 1);
-            } else {
-                return "-ERR Missing argument data\r\n";
-            }
-            arguments.add(argument);
-            index += 2;
-        }
-
-        String command = arguments.get(0);
-        String response = "";
-
-        if("PING".equalsIgnoreCase(command)){
-            return "+PONG\r\n";
-        }
-
-        if ("ECHO".equalsIgnoreCase(command)) {
-            if (arguments.size() > 1) {
-                String echoArgument = arguments.get(1);
-                response = echoArgument != null ? echoArgument : "";
-            }
-        }
-
-        return formatResponse(response);
+        outputStream.flush();
     }
 
-    private String formatResponse(String response) {
-        if (response == null) {
-            return "$-1\r\n"; // Format pour une réponse null
-        } else if (response.isEmpty()) {
-            return "$0\r\n\r\n"; // Format pour une chaîne vide
-        } else {
-            return String.format("$%d\r\n%s\r\n",response.length(), response);
+    private void hundleEchoCommande(String[] split,OutputStream outputStream) throws IOException{
+
+        if(split.length<=3 || split.length>5){
+            outputStream.write("-ERR wrong number of arguments\r\n".getBytes());
+        }else {
+            sendBulkString(outputStream,split[split.length-1]);
         }
+        outputStream.flush();
+    }
+
+    private void hundleGetCommande(String[] split,OutputStream outputStream) throws IOException{
+        if(split.length<=3 || split.length>5){
+            outputStream.write("-ERR wrong number of arguments\r\n".getBytes());
+        }else {
+            Node val=store.get(split[split.length-1]);
+            if (val !=null){
+                System.out.println(val.exp);
+                System.out.println(val.value);
+                if (val.exp != null){
+                    System.out.println(isExpired(val));
+                    if(isExpired(val)){
+                        outputStream.write("$-1\r\n".getBytes());
+                    }else {
+                        sendBulkString(outputStream,val.value);
+                    }
+                }else {
+                    sendBulkString(outputStream,val.value);
+                }
+            }else {
+                outputStream.write("$-1\r\n".getBytes());
+            }
+
+        }
+        outputStream.flush();
+    }
+
+    private void hundleSetCommande(String[] split,OutputStream outputStream) throws IOException{
+        try {
+            if(split.length<7){
+                outputStream.write("-ERR wrong number of arguments\r\n".getBytes());
+            } else if (split.length > 7) {
+                String px=split[8].toLowerCase().equals("px") ? "px":null;
+                if(px==null){
+                    outputStream.write("-ERR syntax error\r\n".getBytes());
+                }else {
+                    Long expiry = Long.parseLong(split[split.length-1]);
+                    store.put(
+                            split[4],
+                            new Node(split[6],new Date().getTime() + expiry)
+                    );
+                    outputStream.write("+OK\r\n".getBytes());
+                }
+            }else {
+                store.put(
+                        split[4],
+                        new Node(split[split.length-1])
+                );
+                outputStream.write("+OK\r\n".getBytes());
+            }
+        }catch (NumberFormatException e){
+            outputStream.write("-ERR value is not an integer or out of range\r\n".getBytes());
+        }finally {
+            outputStream.flush();
+        }
+
+    }
+
+    private boolean isExpired(Node node) {
+        return new Date().getTime() > node.exp;
+    }
+
+    private void sendBulkString(OutputStream outputStream, String value) throws IOException {
+        String response = "$" + value.length() + "\r\n" + value + "\r\n";
+        outputStream.write(response.getBytes());
     }
 }
-//List<String> request=new ArrayList<>();
-/*while (bufferedReader.ready()) {
-                String line = bufferedReader.readLine();
-
-                if (line == null) {
-                    // Connection closed by client
-                    break;
-                }
-                request.add(line);
-            }
-
-            if (!request.isEmpty()) {
-                String response = processRequest(request);
-                System.out.println(response);
-                outputStream.write(response.getBytes());
-            }*/
