@@ -1,25 +1,25 @@
 package org.example.types;
 
-public class RedisError extends RedisData {
-    private final String value;
+public class IntegerType extends DataType {
+    private final long value;
 
-    public RedisError(String value) {
+    public IntegerType(long value) {
         super();
         this.value = value;
     }
 
     @Override
     public RedisDataType getType() {
-        return RedisDataType.ERROR;
+        return RedisDataType.INTEGER;
     }
 
     @Override
     public String getFormattedValue() {
-        return "-" + value + "\r\n";
+        return ":" + value + "\r\n";
     }
 
     @Override
-    public String getRawValue() {
+    public Long getRawValue() {
         return value;
     }
 }

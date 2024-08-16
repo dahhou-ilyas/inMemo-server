@@ -1,6 +1,6 @@
 package org.example.types;
 
-public abstract class RedisData {
+public abstract class DataType {
     abstract public RedisDataType getType();
 
     abstract public String getFormattedValue();

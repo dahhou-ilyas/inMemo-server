@@ -1,9 +1,9 @@
 package org.example.types;
 
-public class RedisArray extends RedisData {
-    private final RedisData[] values;
+public class ArrayType extends DataType {
+    private final DataType[] values;
 
-    public RedisArray(RedisData[] values) {
+    public ArrayType(DataType[] values) {
         super();
         this.values = values;
     }
@@ -19,12 +19,12 @@ public class RedisArray extends RedisData {
         sb.append("*");
         sb.append(values.length);
         sb.append("\r\n");
-        for (RedisData value : values) sb.append(value.getFormattedValue());
+        for (DataType value : values) sb.append(value.getFormattedValue());
         return sb.toString();
     }
 
     @Override
-    public RedisData[] getRawValue() {
+    public DataType[] getRawValue() {
         return values;
     }
 }

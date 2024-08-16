@@ -1,22 +1,20 @@
 package org.example.types;
 
-public class RedisBulkString extends RedisData {
+public class SimpleStringType extends DataType {
     private final String value;
 
-    public RedisBulkString(String value) {
-        super();
+    public SimpleStringType(String value) {
         this.value = value;
     }
 
     @Override
     public RedisDataType getType() {
-        return RedisDataType.BULK_STRING;
+        return RedisDataType.SIMPLE_STRING;
     }
 
     @Override
     public String getFormattedValue() {
-        if (value == null) return "$-1\r\n";
-        return "$" + value.length() + "\r\n" + value + "\r\n";
+        return "+" + value + "\r\n";
     }
 
     @Override

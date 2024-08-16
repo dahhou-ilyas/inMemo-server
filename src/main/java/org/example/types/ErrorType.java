@@ -1,20 +1,21 @@
 package org.example.types;
 
-public class RedisSimpleString extends RedisData {
+public class ErrorType extends DataType {
     private final String value;
 
-    public RedisSimpleString(String value) {
+    public ErrorType(String value) {
+        super();
         this.value = value;
     }
 
     @Override
     public RedisDataType getType() {
-        return RedisDataType.SIMPLE_STRING;
+        return RedisDataType.ERROR;
     }
 
     @Override
     public String getFormattedValue() {
-        return "+" + value + "\r\n";
+        return "-" + value + "\r\n";
     }
 
     @Override
