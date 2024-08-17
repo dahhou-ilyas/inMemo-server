@@ -1,5 +1,6 @@
 package org.example;
 
+import java.util.Date;
 import java.util.HashMap;
 
 public class Store {
@@ -16,12 +17,21 @@ public class Store {
             this.value = value;
         }
 
+        @Override
+        public String toString() {
+            if(exp != null){
+                return "("+value +" , "+new Date(exp) +")";
+            }
+            return "("+value+")";
+
+        }
     }
 
     private static HashMap<String , Node> db=new HashMap<>();
 
     public static String set(String key,String value,Long exp){
         db.put(key,new Node(value,exp));
+        System.out.println(db);
         return "OK";
     }
 
