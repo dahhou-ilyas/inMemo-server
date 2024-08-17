@@ -9,8 +9,8 @@ public class BulkStringType extends DataType {
     }
 
     @Override
-    public RedisDataType getType() {
-        return RedisDataType.BULK_STRING;
+    public TypeDataType getType() {
+        return TypeDataType.BULK_STRING;
     }
 
     @Override

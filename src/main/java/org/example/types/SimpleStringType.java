@@ -8,8 +8,8 @@ public class SimpleStringType extends DataType {
     }
 
     @Override
-    public RedisDataType getType() {
-        return RedisDataType.SIMPLE_STRING;
+    public TypeDataType getType() {
+        return TypeDataType.SIMPLE_STRING;
     }
 
     @Override

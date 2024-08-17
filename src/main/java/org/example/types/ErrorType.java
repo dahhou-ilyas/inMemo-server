@@ -9,8 +9,8 @@ public class ErrorType extends DataType {
     }
 
     @Override
-    public RedisDataType getType() {
-        return RedisDataType.ERROR;
+    public TypeDataType getType() {
+        return TypeDataType.ERROR;
     }
 
     @Override

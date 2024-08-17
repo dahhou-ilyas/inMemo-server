@@ -9,8 +9,8 @@ public class IntegerType extends DataType {
     }
 
     @Override
-    public RedisDataType getType() {
-        return RedisDataType.INTEGER;
+    public TypeDataType getType() {
+        return TypeDataType.INTEGER;
     }
 
     @Override

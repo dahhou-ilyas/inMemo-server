@@ -9,8 +9,8 @@ public class ArrayType extends DataType {
     }
 
     @Override
-    public RedisDataType getType() {
-        return RedisDataType.ARRAY;
+    public TypeDataType getType() {
+        return TypeDataType.ARRAY;
     }
 
     @Override
