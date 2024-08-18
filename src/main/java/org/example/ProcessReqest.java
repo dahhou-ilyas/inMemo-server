@@ -1,4 +1,5 @@
-import org.example.Store;
+package org.example;
+
 import org.example.types.*;
 
 import java.io.PrintWriter;
@@ -88,6 +89,17 @@ public class ProcessReqest {
             return new SimpleStringType(res);
         }
         return new ErrorType("ERR wrong number of arguments");
+    }
+
+    private DataType processGet(){
+        DataType[] completeCommande =getArray();
+        System.out.println(new ArrayList<>(List.of(completeCommande)));
+        if(completeCommande.length < 2){
+            return new ErrorType("ERR wrong number of arguments");
+        }
+        String key=((BulkStringType) completeCommande[1]).getRawValue();
+        String result=Store.get(key);
+        return new BulkStringType(result);
     }
 
     public DataType[] getArray(){
